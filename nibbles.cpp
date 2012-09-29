@@ -1,7 +1,7 @@
 /*
 
   nibbels: yet another snake rip
-  Copyright (C) 2012  Chris Bush
+  Copyright (C) Chris Bush  2012
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
