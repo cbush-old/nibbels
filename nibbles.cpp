@@ -51,7 +51,7 @@ struct node {
   node(float _x, float _y):x(_x),y(_y){}
   void draw();
   
-} orignode(gamew/2,gameh/2);
+};
 
 class Food : public node {
   public:
