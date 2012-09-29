@@ -30,10 +30,13 @@
 using std::deque;
 using std::cout;
 
+const double PI_2 = 3.14159*2.0;
+
 const int gamew = 160, gameh = 120, nodew = 16;
 const int levelbreak = 640, maxlevel = 25;
 const float node_rad = 4.0;
 int level;
+char keys;
 
 enum Direction {
   LEFT=1, RIGHT=2, UP=4, DOWN=8
@@ -83,9 +86,8 @@ class Snake {
     void draw();
     void eat();
     void die();
-    void go(Direction);
-    int hits_self();
     void check_bounds();
+    int hits_self();
 
 } *snake;
 
@@ -109,7 +111,7 @@ int main(int argc, char* argv[]){
   food = new Food();
   level = 1;
   
-  for(SDL_Event e; e.type!=SDL_QUIT; SDL_PollEvent(&e)){
+  for(SDL_Event e; e.type!=SDL_QUIT; ){
     
     if(!snake->active){  
       delete snake;
@@ -122,16 +124,25 @@ int main(int argc, char* argv[]){
     
     }
   
-    if(e.type==SDL_KEYDOWN){
-      switch(e.key.keysym.sym){
-        case SDLK_UP:    snake->go(UP);    break;
-        case SDLK_DOWN:  snake->go(DOWN);  break;
-        case SDLK_LEFT:  snake->go(LEFT);  break;
-        case SDLK_RIGHT: snake->go(RIGHT); break;
-        case SDLK_ESCAPE: e.type=SDL_QUIT;  break;
+    while(SDL_PollEvent(&e)){
+      if(e.type==SDL_KEYDOWN){
+        switch(e.key.keysym.sym){
+          case SDLK_UP:    keys|=UP;    break;
+          case SDLK_DOWN:  keys|=DOWN;  break;
+          case SDLK_LEFT:  keys|=LEFT;  break;
+          case SDLK_RIGHT: keys|=RIGHT; break;
+          case SDLK_ESCAPE: e.type=SDL_QUIT;  break;
+        }
+      } else if(e.type==SDL_KEYUP){
+        switch(e.key.keysym.sym){
+          case SDLK_UP:    keys&=~UP;    break;
+          case SDLK_DOWN:  keys&=~DOWN;  break;
+          case SDLK_LEFT:  keys&=~LEFT;  break;
+          case SDLK_RIGHT: keys&=~RIGHT; break;
+        }
       }
+      if(e.type==SDL_QUIT) break;
     }
-    
     glClearColor(
       sin((float)level+1)/2+0.5,
       sin((float)level+2)/2+0.5,
@@ -157,7 +168,8 @@ int main(int argc, char* argv[]){
 }
 
 void Snake::eat(){
-  const static int rad2 = node_rad*node_rad;
+  // make it a little easier to get the food
+  const static int rad2 = node_rad*node_rad*4; 
   if((x-food->x)*(x-food->x)+(y-food->y)*(y-food->y) < rad2){
     food->active = 0;
     if((length *= 2) > levelbreak){
@@ -192,15 +204,6 @@ void Snake::check_bounds(){
   if(y > gameh) y = -gameh;
 }
 
-void Snake::go(Direction d){
-  switch(d){
-    case UP:    if(yv > 0) return;  xv = 0; yv = -1;  break;
-    case DOWN:  if(yv < 0) return;  xv = 0; yv =  1;  break;
-    case LEFT:  if(xv > 0) return;  yv = 0; xv = -1;  break;
-    case RIGHT: if(xv < 0) return;  yv = 0; xv =  1;  break;
-  }
-}
-
 void Snake::die(){  
   active = 0;
 }
@@ -225,6 +228,22 @@ void Snake::update(){
   
   if(!active) return;
 
+  if(keys&UP&&!(yv>0)){
+    yv = -1;
+  } else if(keys&DOWN&&!(yv<0)){
+    yv = 1;
+  } else if(xv){
+    yv = 0;
+  }
+  if(keys&LEFT&&!(xv>0)){
+    xv = -1;
+  } else if(keys&RIGHT&&!(xv<0)){
+    xv = 1;
+  } else if(yv){
+    xv = 0;
+  }
+  
+  
   if(xv||yv){
     x += xv*node_rad;
     y += yv*node_rad;
@@ -250,7 +269,13 @@ void Snake::update(){
 
 void Food::update(){
   
+  static float t = 0.0;
   if(!active) return;
+  
+  t += 0.2;
+  x += sin(t)/PI_2;
+  y += cos(t)/PI_2;
+  
   
   glColor3f(
     sin((float)level+3)/2+0.5,
